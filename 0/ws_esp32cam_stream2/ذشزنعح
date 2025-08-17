@@ -1,0 +1,1150 @@
+#include "esp_camera.h"
+#include <WiFi.h>
+// Disable compression to avoid potential issues
+// #define WEBSOCKETS_USE_COMPRESSION 1
+#include <ArduinoWebsockets.h>
+#include <nvs_flash.h>
+#include <ArduinoJson.h>
+
+using namespace websockets;
+
+// اطلاعات شبکه و سرور - پشتیبانی از هر دو آدرس
+const char* ssid = "SAMSUNG";      
+const char* password = "panzer790"; 
+
+// آدرس‌های سرور - پشتیبانی از هر دو حالت
+const char* websocket_server_secure = "smart-cctv-rash32.chbk.app"; 
+const char* websocket_server_ip = "services.gen6.chabokan.net";
+const uint16_t websocket_port_secure = 80; // پورت امن (HTTPS/WSS)
+const uint16_t websocket_port_ip = 40345;   // پورت IP (HTTP/WS)
+const char* websocket_path = "/ws/esp32cam";
+
+// تنظیمات احراز هویت - اصلاح شده
+const char* AUTH_TOKEN = "esp32cam_secure_token_2024";
+
+// پین‌های دوربین (AI-THINKER)
+#define PWDN_GPIO_NUM     32
+#define RESET_GPIO_NUM    -1
+#define XCLK_GPIO_NUM      0
+#define SIOD_GPIO_NUM     26
+#define SIOC_GPIO_NUM     27
+#define Y9_GPIO_NUM       35
+#define Y8_GPIO_NUM       34
+#define Y7_GPIO_NUM       39
+#define Y6_GPIO_NUM       36
+#define Y5_GPIO_NUM       21
+#define Y4_GPIO_NUM       19
+#define Y3_GPIO_NUM       18
+#define Y2_GPIO_NUM        5
+#define VSYNC_GPIO_NUM    25
+#define HREF_GPIO_NUM     23
+#define PCLK_GPIO_NUM     22
+#define FLASH_GPIO_NUM     4 // پین فلاش LED (PWM)
+
+// تنظیمات PWM برای فلاش
+#define FLASH_PWM_CHANNEL  1
+#define FLASH_PWM_FREQ     1000
+#define FLASH_PWM_RESOLUTION 8
+#define MAX_FLASH_DUTY     230 // 90% از 255
+
+// متغیرهای برنامه - بهبود یافته
+WebsocketsClient client;
+bool isConnected = false;
+bool isManualPhotoMode = false;
+unsigned long manualPhotoStartTime = 0;
+unsigned long lastFrameTime = 0;
+unsigned long frameCount = 0;
+float fps = 0;
+unsigned long lastAecAdjustTime = 0;
+const unsigned long aecAdjustInterval = 3000;
+unsigned long reconnectDelay = 1000;
+const unsigned long maxReconnectDelay = 4000;
+int reconnectAttempts = 0;
+const int maxReconnectAttempts = 5; // افزایش تعداد تلاش‌ها
+unsigned long lastDisconnectTime = 0;
+const unsigned long maxDisconnectDuration = 300000;
+RTC_DATA_ATTR float brightnessMovingAverage = 0;
+float lastBrightness = 0;
+const float alpha = 0.3;
+const float BRIGHTNESS_OFFSET = 0.0;
+int cameraErrorCount = 0;
+const int maxCameraErrors = 3;
+int wifiRestartCount = 0;
+const int maxWifiRestarts = 3;
+RTC_DATA_ATTR int deepSleepCount = 0;
+const int maxDeepSleepCount = 3;
+int frameErrorCount = 0;
+const int maxFrameErrors = 7;
+unsigned long lastLogTime = 0;
+const unsigned long logInterval = 10000;
+
+// متغیرهای جدید برای مدیریت اتصال - فقط پورت IP
+bool useSecureConnection = false;  // فقط از اتصال IP استفاده کن
+unsigned long lastConnectionAttempt = 0;
+const unsigned long connectionSwitchInterval = 60000; // 60 ثانیه - افزایش فاصله تغییر
+int connectionFailures = 0;
+const int maxConnectionFailures = 5; // افزایش تعداد تلاش‌ها
+
+// متغیرهای جدید برای بهبود پایداری
+unsigned long lastPingTime = 0;
+const unsigned long pingInterval = 30000; // 30 ثانیه
+unsigned long lastHeartbeatTime = 0;
+const unsigned long heartbeatInterval = 10000; // 10 ثانیه
+bool isAuthenticated = false;
+unsigned long authTimeout = 0;
+const unsigned long authTimeoutDuration = 10000; // 10 ثانیه timeout برای احراز هویت
+
+// متغیرهای جدید برای مدیریت حافظه
+unsigned long lastMemoryCleanup = 0;
+const unsigned long memoryCleanupInterval = 15000; // 15 ثانیه
+unsigned long lastFrameBufferCleanup = 0;
+const unsigned long frameBufferCleanupInterval = 10000; // 10 ثانیه
+int memoryCleanupCount = 0;
+const int maxMemoryCleanupCount = 5;
+
+// متغیرهای تنظیمات دوربین - هماهنگ با سرور
+int currentPhotoQuality = 80;
+int currentFlashIntensity = 50;
+bool currentFlashEnabled = false;
+int currentBrightness = 0;
+int currentContrast = 0;
+int currentSaturation = 0;
+int currentSharpness = 0;
+bool currentAutoExposure = true;
+bool currentAutoWhiteBalance = true;
+
+// متغیرهای وضعیت سیستم
+unsigned long lastSettingsUpdate = 0;
+const unsigned long settingsUpdateInterval = 5000;
+bool settingsChanged = false;
+
+// متغیر برای ذخیره عکس دستی
+camera_fb_t* last_captured_fb = nullptr;
+
+// ارسال لاگ به سرور - بهبود یافته
+void sendLog(const String& message, const String& log_type = "info") {
+  if (isConnected && isAuthenticated) {
+    String json = "{\"type\":\"log\",\"message\":\"" + message + "\",\"log_type\":\"" + log_type + "\",\"timestamp\":\"" + String(millis()) + "\"}";
+    client.send(json);
+  }
+  String upperLogType = log_type;
+  upperLogType.toUpperCase();
+  Serial.println("[" + upperLogType + "] " + message);
+}
+
+// بررسی کیفیت سیگنال WiFi - بهبود یافته
+bool checkWiFiSignal() {
+  int32_t rssi = WiFi.RSSI();
+  if (rssi < -80) {
+    String msg = "Weak WiFi signal: " + String(rssi) + " dBm";
+    sendLog(msg, "warning");
+    return false;
+  }
+  return true;
+}
+
+// تابع تنظیم فلاش با شدت متغیر - جدید
+void setFlashIntensity(int intensity) {
+  if (intensity < 0) intensity = 0;
+  if (intensity > 100) intensity = 100;
+  
+  currentFlashIntensity = intensity;
+  int dutyCycle = map(intensity, 0, 100, 0, MAX_FLASH_DUTY);
+  ledcWrite(FLASH_PWM_CHANNEL, dutyCycle);
+  
+  sendLog("Flash intensity set to: " + String(intensity) + "% (duty: " + String(dutyCycle) + ")", "info");
+  client.send("{\"type\":\"flash_intensity\",\"intensity\":" + String(intensity) + "}");
+}
+
+// تابع تنظیم کیفیت عکس - بهبود یافته
+void setPhotoQuality(int quality) {
+  if (quality < 1) quality = 1;
+  if (quality > 100) quality = 100;
+  
+  currentPhotoQuality = quality;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_quality(s, quality);
+    sendLog("Photo quality set to: " + String(quality), "info");
+    client.send("{\"type\":\"photo_quality\",\"quality\":" + String(quality) + "}");
+  }
+}
+
+// تابع تنظیم brightness - جدید
+void setBrightness(int brightness) {
+  if (brightness < -2) brightness = -2;
+  if (brightness > 2) brightness = 2;
+  
+  currentBrightness = brightness;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_brightness(s, brightness);
+    sendLog("Brightness set to: " + String(brightness), "info");
+    client.send("{\"type\":\"brightness\",\"value\":" + String(brightness) + "}");
+  }
+}
+
+// تابع تنظیم contrast - جدید
+void setContrast(int contrast) {
+  if (contrast < -2) contrast = -2;
+  if (contrast > 2) contrast = 2;
+  
+  currentContrast = contrast;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_contrast(s, contrast);
+    sendLog("Contrast set to: " + String(contrast), "info");
+    client.send("{\"type\":\"contrast\",\"value\":" + String(contrast) + "}");
+  }
+}
+
+// تابع تنظیم saturation - جدید
+void setSaturation(int saturation) {
+  if (saturation < -2) saturation = -2;
+  if (saturation > 2) saturation = 2;
+  
+  currentSaturation = saturation;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_saturation(s, saturation);
+    sendLog("Saturation set to: " + String(saturation), "info");
+    client.send("{\"type\":\"saturation\",\"value\":" + String(saturation) + "}");
+  }
+}
+
+// تابع تنظیم sharpness - جدید
+void setSharpness(int sharpness) {
+  if (sharpness < -2) sharpness = -2;
+  if (sharpness > 2) sharpness = 2;
+  
+  currentSharpness = sharpness;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_sharpness(s, sharpness);
+    sendLog("Sharpness set to: " + String(sharpness), "info");
+    client.send("{\"type\":\"sharpness\",\"value\":" + String(sharpness) + "}");
+  }
+}
+
+// تابع تنظیم auto exposure - جدید
+void setAutoExposure(bool enabled) {
+  currentAutoExposure = enabled;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_exposure_ctrl(s, enabled ? 1 : 0);
+    sendLog("Auto exposure " + String(enabled ? "enabled" : "disabled"), "info");
+    client.send("{\"type\":\"auto_exposure\",\"enabled\":" + String(enabled ? "true" : "false") + "}");
+  }
+}
+
+// تابع تنظیم auto white balance - جدید
+void setAutoWhiteBalance(bool enabled) {
+  currentAutoWhiteBalance = enabled;
+  sensor_t *s = esp_camera_sensor_get();
+  if (s) {
+    s->set_whitebal(s, enabled ? 1 : 0);
+    sendLog("Auto white balance " + String(enabled ? "enabled" : "disabled"), "info");
+    client.send("{\"type\":\"auto_white_balance\",\"enabled\":" + String(enabled ? "true" : "false") + "}");
+  }
+}
+
+// تابع ارسال عکس دستی - بهبود یافته
+void sendManualPhoto() {
+  if (isManualPhotoMode) {
+    sendLog("Manual photo already in progress, skipping new request", "warning");
+    client.send("{\"type\":\"photo_error\",\"message\":\"Photo capture already in progress\"}");
+    return;
+  }
+  
+  isManualPhotoMode = true;
+  manualPhotoStartTime = millis();
+  
+  sendLog("Starting manual photo capture...", "info");
+  
+  // تنظیم کیفیت قبل از گرفتن عکس
+  setPhotoQuality(currentPhotoQuality);
+  
+  // تنظیم فلاش قبل از گرفتن عکس
+  if (currentFlashEnabled) {
+    setFlashIntensity(currentFlashIntensity);
+    delay(100); // تاخیر کوتاه برای تثبیت فلاش
+  }
+  
+  // گرفتن عکس با کیفیت بالا
+  camera_fb_t* fb = esp_camera_fb_get();
+  if (!fb) {
+    sendLog("Failed to capture manual photo", "error");
+    client.send("{\"type\":\"photo_error\",\"message\":\"Failed to capture photo\"}");
+    isManualPhotoMode = false;
+    return;
+  }
+  
+  // ارسال metadata قبل از عکس
+  String photoMetadata = "{\"type\":\"photo_data\",\"size\":" + String(fb->len) + 
+                        ",\"format\":\"jpeg\",\"timestamp\":\"" + String(millis()) + 
+                        "\",\"quality\":" + String(currentPhotoQuality) + 
+                        ",\"flash_enabled\":" + String(currentFlashEnabled ? "true" : "false") + 
+                        ",\"flash_intensity\":" + String(currentFlashIntensity) + "}";
+  client.send(photoMetadata);
+  
+  bool sent = client.sendBinary((const char*)fb->buf, fb->len);
+  if (sent) {
+    sendLog("Manual photo sent successfully: " + String(fb->len) + " bytes", "info");
+    client.send("{\"type\":\"photo_sent\",\"size\":" + String(fb->len) + 
+                ",\"quality\":" + String(currentPhotoQuality) + 
+                ",\"flash_intensity\":" + String(currentFlashIntensity) + "}");
+  } else {
+    sendLog("Failed to send manual photo", "error");
+    client.send("{\"type\":\"photo_error\",\"message\":\"Failed to send photo\"}");
+  }
+  
+  // خاموش کردن فلاش بعد از عکس
+  if (currentFlashEnabled) {
+    ledcWrite(FLASH_PWM_CHANNEL, 0);
+  }
+  
+  // آزادسازی حافظه - بهبود یافته
+  esp_camera_fb_return(fb);
+  
+  // پاکسازی حافظه اضافی
+  if (last_captured_fb) {
+    esp_camera_fb_return(last_captured_fb);
+    last_captured_fb = nullptr;
+  }
+  
+  // بررسی حافظه بعد از آزادسازی
+  size_t freeMemory = ESP.getFreeHeap();
+  if (freeMemory < 40000) {
+    sendLog("Low memory after photo capture: " + String(freeMemory) + " bytes", "warning");
+    ESP.getMinFreeHeap(); // پاکسازی حافظه اضافی
+  }
+  
+  isManualPhotoMode = false;
+}
+
+// پردازش دستورات کنترل - بهبود یافته
+void processControlCommand(const String& jsonStr) {
+  JsonDocument doc; // استفاده از JsonDocument به جای StaticJsonDocument
+  DeserializationError err = deserializeJson(doc, jsonStr);
+  if (err) {
+    sendLog("JSON parse error in control command: " + String(err.c_str()), "error");
+    return;
+  }
+  
+  // پردازش دستورات مختلف
+  if (doc["action"].is<String>()) {
+    String action = doc["action"].as<String>();
+    sendLog("Processing action: " + action, "info");
+    
+    if (action == "capture_photo") {
+      // پردازش پارامترهای عکس دستی
+      if (doc["quality"].is<int>()) {
+        int quality = doc["quality"].as<int>();
+        setPhotoQuality(quality);
+      }
+      if (doc["flash"].is<bool>()) {
+        bool flash_enabled = doc["flash"].as<bool>();
+        currentFlashEnabled = flash_enabled;
+        if (flash_enabled && doc["intensity"].is<int>()) {
+          int intensity = doc["intensity"].as<int>();
+          setFlashIntensity(intensity);
+        } else if (!flash_enabled) {
+          ledcWrite(FLASH_PWM_CHANNEL, 0);
+        }
+      }
+      sendManualPhoto();
+    } else if (action == "flash_on") {
+      currentFlashEnabled = true;
+      int intensity = doc["intensity"].is<int>() ? doc["intensity"].as<int>() : currentFlashIntensity;
+      setFlashIntensity(intensity);
+    } else if (action == "flash_off") {
+      currentFlashEnabled = false;
+      ledcWrite(FLASH_PWM_CHANNEL, 0);
+      sendLog("Flash turned OFF", "info");
+      client.send("{\"type\":\"flash\",\"status\":\"off\"}");
+    } else if (action == "reset_position") {
+      sendLog("Reset position command received", "info");
+      client.send("{\"type\":\"reset_position\",\"status\":\"success\"}");
+    } else if (action == "emergency_stop") {
+      sendLog("Emergency stop command received", "warning");
+      client.send("{\"type\":\"emergency_stop\",\"status\":\"success\"}");
+    } else if (action == "system_reboot") {
+      sendLog("System reboot command received", "warning");
+      client.send("{\"type\":\"system_reboot\",\"status\":\"success\"}");
+      delay(1000);
+      ESP.restart();
+    } else {
+      sendLog("Unknown action: " + action, "warning");
+      client.send("{\"type\":\"unknown_action\",\"action\":\"" + action + "\"}");
+    }
+  }
+  
+  // پردازش دستورات سروو
+  if (doc["servo1"].is<int>() && doc["servo2"].is<int>()) {
+    int servo1 = doc["servo1"].as<int>();
+    int servo2 = doc["servo2"].as<int>();
+    sendLog("Servo command received: servo1=" + String(servo1) + ", servo2=" + String(servo2), "info");
+    client.send("{\"type\":\"servo_command\",\"servo1\":" + String(servo1) + ",\"servo2\":" + String(servo2) + "}");
+  }
+  
+  // پردازش دستورات کیفیت عکس
+  if (doc["photo_quality"].is<int>()) {
+    int quality = doc["photo_quality"].as<int>();
+    setPhotoQuality(quality);
+  }
+  
+  // پردازش دستورات فلاش
+  if (doc["flash"].is<bool>()) {
+    bool flash_on = doc["flash"].as<bool>();
+    currentFlashEnabled = flash_on;
+    if (flash_on) {
+      int intensity = doc["intensity"].is<int>() ? doc["intensity"].as<int>() : currentFlashIntensity;
+      setFlashIntensity(intensity);
+    } else {
+      ledcWrite(FLASH_PWM_CHANNEL, 0);
+    }
+  }
+  
+  // پردازش دستورات brightness
+  if (doc["brightness"].is<int>()) {
+    int brightness = doc["brightness"].as<int>();
+    setBrightness(brightness);
+  }
+  
+  // پردازش دستورات contrast
+  if (doc["contrast"].is<int>()) {
+    int contrast = doc["contrast"].as<int>();
+    setContrast(contrast);
+  }
+  
+  // پردازش دستورات saturation
+  if (doc["saturation"].is<int>()) {
+    int saturation = doc["saturation"].as<int>();
+    setSaturation(saturation);
+  }
+  
+  // پردازش دستورات sharpness
+  if (doc["sharpness"].is<int>()) {
+    int sharpness = doc["sharpness"].as<int>();
+    setSharpness(sharpness);
+  }
+  
+  // پردازش دستورات auto exposure
+  if (doc["auto_exposure"].is<bool>()) {
+    bool enabled = doc["auto_exposure"].as<bool>();
+    setAutoExposure(enabled);
+  }
+  
+  // پردازش دستورات auto white balance
+  if (doc["auto_white_balance"].is<bool>()) {
+    bool enabled = doc["auto_white_balance"].as<bool>();
+    setAutoWhiteBalance(enabled);
+  }
+  
+  // پردازش دستورات تنظیمات کامل دوربین
+  if (doc["camera_settings"].is<JsonObject>()) {
+    JsonObject settings = doc["camera_settings"];
+    if (settings["quality"].is<int>()) setPhotoQuality(settings["quality"].as<int>());
+    if (settings["brightness"].is<int>()) setBrightness(settings["brightness"].as<int>());
+    if (settings["contrast"].is<int>()) setContrast(settings["contrast"].as<int>());
+    if (settings["saturation"].is<int>()) setSaturation(settings["saturation"].as<int>());
+    if (settings["sharpness"].is<int>()) setSharpness(settings["sharpness"].as<int>());
+    if (settings["auto_exposure"].is<bool>()) setAutoExposure(settings["auto_exposure"].as<bool>());
+    if (settings["auto_white_balance"].is<bool>()) setAutoWhiteBalance(settings["auto_white_balance"].as<bool>());
+    
+    sendLog("Camera settings updated from server", "info");
+    client.send("{\"type\":\"camera_settings_updated\",\"status\":\"success\"}");
+  }
+  
+  settingsChanged = true;
+}
+
+// callback وب‌سوکت - بهبود یافته
+void onEventsCallback(WebsocketsEvent event, String data) {
+  if (event == WebsocketsEvent::ConnectionOpened) {
+    sendLog("WebSocket connection opened");
+    isConnected = true;
+    isAuthenticated = false; // منتظر احراز هویت
+    authTimeout = millis();
+    reconnectAttempts = 0;
+    reconnectDelay = 1000;
+    lastDisconnectTime = 0;
+    lastPingTime = millis();
+    lastHeartbeatTime = millis();
+  } else if (event == WebsocketsEvent::ConnectionClosed) {
+    sendLog("WebSocket connection closed", "warning");
+    isConnected = false;
+    isAuthenticated = false;
+    lastDisconnectTime = millis();
+  } else if (event == WebsocketsEvent::GotPing) {
+    sendLog("Received Ping");
+    client.pong();
+  } else if (event == WebsocketsEvent::GotPong) {
+    sendLog("Received Pong");
+  } else {
+    // Handle text messages (data contains the message)
+    if (data.length() > 0) {
+      sendLog("Received message: " + data);
+      // بررسی احراز هویت
+      if (!isAuthenticated) {
+        if (data.indexOf("connection_ack") != -1) {
+          isAuthenticated = true;
+          sendLog("Authentication successful");
+          // ارسال پیام اولیه با اطلاعات کامل
+          String initialMessage = "{\"type\":\"device_info\",\"device\":\"esp32cam\",\"version\":\"1.0\",\"capabilities\":[\"photo\",\"flash\",\"stream\",\"camera_control\"],\"current_settings\":{\"quality\":" + String(currentPhotoQuality) + ",\"flash_intensity\":" + String(currentFlashIntensity) + ",\"flash_enabled\":" + String(currentFlashEnabled ? "true" : "false") + "}}";
+          client.send(initialMessage);
+        } else if (millis() - authTimeout > authTimeoutDuration) {
+          sendLog("Authentication timeout", "error");
+          client.close();
+          return;
+        } else {
+          sendLog("Waiting for connection_ack, received: " + data);
+        }
+      } else {
+        processControlCommand(data);
+      }
+    }
+  }
+}
+
+// اتصال به وب‌سوکت - بهبود یافته با پشتیبانی از هر دو آدرس
+void connectWebSocket() {
+  if (WiFi.status() != WL_CONNECTED) {
+    sendLog("WiFi disconnected, attempting to reconnect...", "warning");
+    WiFi.reconnect();
+    delay(1000);
+    if (WiFi.status() != WL_CONNECTED) {
+      sendLog("WiFi reconnect failed!", "error");
+      return;
+    }
+  }
+
+  if (!checkWiFiSignal()) {
+    sendLog("Weak WiFi signal detected. Entering deep sleep...", "error");
+    deepSleepCount++;
+    unsigned long sleepTime = (deepSleepCount > maxDeepSleepCount) ? 60000000 : 30000000;
+    String msg = "Deep sleep count: " + String(deepSleepCount) + ", sleeping for " + String(sleepTime) + " ms";
+    sendLog(msg, "error");
+    ledcWrite(FLASH_PWM_CHANNEL, 0);
+    esp_sleep_enable_timer_wakeup(sleepTime);
+    esp_deep_sleep_start();
+  }
+
+  // انتخاب آدرس سرور - فقط از پورت IP استفاده کن
+  const char* current_server = websocket_server_ip;
+  uint16_t current_port = websocket_port_ip;
+  String connection_type = "IP address (Port 40345)";
+
+  String url = String("ws://") + current_server + ":" + String(current_port) + websocket_path; 
+  sendLog("Connecting to " + connection_type + ": " + url);
+  sendLog("Using token: " + String(AUTH_TOKEN));
+  
+  // تنظیم headers برای احراز هویت و WebSocket
+  client.addHeader("Authorization", "Bearer " + String(AUTH_TOKEN));
+  
+  // تنظیمات اتصال غیرامن - بدون SSL
+  // client.setInsecure(); // نیازی به SSL نیست چون اتصال غیرامن است
+  
+  sendLog("Attempting WebSocket connection...");
+  if (client.connect(current_server, current_port, websocket_path)) {
+    sendLog("WebSocket connected to " + connection_type + "!");
+    isConnected = true;
+    isAuthenticated = false;
+    authTimeout = millis();
+    reconnectAttempts = 0;
+    reconnectDelay = 1000;
+    lastDisconnectTime = 0;
+    lastPingTime = millis();
+    lastHeartbeatTime = millis();
+    connectionFailures = 0; // ریست کردن شمارنده خطاها
+  } else {
+    sendLog("WebSocket connection to " + connection_type + " failed!", "error");
+    isConnected = false;
+    isAuthenticated = false;
+    connectionFailures++;
+    
+    // فقط از پورت IP استفاده کن - تغییر آدرس سرور نداریم
+    if (connectionFailures >= maxConnectionFailures) {
+      sendLog("Max connection failures reached, but staying on IP connection", "warning");
+      connectionFailures = 0; // ریست کردن شمارنده برای تلاش مجدد
+      lastConnectionAttempt = millis();
+    }
+    
+    reconnectAttempts++;
+    
+    if (reconnectAttempts >= maxReconnectAttempts) {
+      sendLog("Max reconnection attempts reached. Entering deep sleep...", "error");
+      deepSleepCount++;
+      unsigned long sleepTime = (deepSleepCount > maxDeepSleepCount) ? 60000000 : 30000000;
+      ledcWrite(FLASH_PWM_CHANNEL, 0);
+      esp_sleep_enable_timer_wakeup(sleepTime);
+      esp_deep_sleep_start();
+    }
+    
+    reconnectDelay = min(reconnectDelay * 2UL, (unsigned long)maxReconnectDelay);
+  }
+}
+
+// راه‌اندازی مجدد دوربین - بهبود یافته
+void restartCamera() {
+  sendLog("Restarting camera...", "warning");
+  
+  // آزادسازی کامل حافظه فریم
+  if (last_captured_fb) {
+    esp_camera_fb_return(last_captured_fb);
+    last_captured_fb = nullptr;
+    sendLog("Released frame buffer during restart", "info");
+  }
+  
+  // پاکسازی حافظه سیستم قبل از راه‌اندازی مجدد
+  ESP.getMinFreeHeap();
+  size_t freeMemory = ESP.getFreeHeap();
+  sendLog("Memory before restart: " + String(freeMemory) + " bytes", "info");
+  
+  // راه‌اندازی مجدد دوربین
+  esp_camera_deinit();
+  delay(1000);
+  
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sccb_sda = SIOD_GPIO_NUM;
+  config.pin_sccb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+  config.xclk_freq_hz = 20000000;
+  config.pixel_format = PIXFORMAT_JPEG;
+  config.frame_size = FRAMESIZE_VGA;
+  config.jpeg_quality = currentPhotoQuality;
+  config.fb_count = 2;
+  
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK) {
+    sendLog("Camera init failed with error: " + String(esp_err_to_name(err)), "error");
+    cameraErrorCount++;
+  } else {
+    sendLog("Camera restarted successfully", "info");
+    cameraErrorCount = 0;
+    
+    // اعمال تنظیمات فعلی
+    sensor_t *s = esp_camera_sensor_get();
+    if (s) {
+      s->set_quality(s, currentPhotoQuality);
+      s->set_brightness(s, currentBrightness);
+      s->set_contrast(s, currentContrast);
+      s->set_saturation(s, currentSaturation);
+      s->set_sharpness(s, currentSharpness);
+      s->set_exposure_ctrl(s, currentAutoExposure ? 1 : 0);
+      s->set_whitebal(s, currentAutoWhiteBalance ? 1 : 0);
+    }
+  }
+}
+
+// تنظیم نوردهی خودکار - بهبود یافته
+void adjustExposure(sensor_t *s, unsigned long &frameDuration) {
+  if (!s) return;
+  
+  // تنظیم AEC (Auto Exposure Control)
+  s->set_aec2(s, 1);
+  s->set_ae_level(s, 0);
+  s->set_aec_value(s, 300);
+  
+  // تنظیم AWB (Auto White Balance)
+  s->set_awb_gain(s, 1);
+  s->set_wb_mode(s, 0);
+  
+  // تنظیم brightness
+  s->set_brightness(s, 0);
+  
+  // تنظیم contrast
+  s->set_contrast(s, 0);
+  
+  // تنظیم saturation
+  s->set_saturation(s, 0);
+  
+  // تنظیم sharpness
+  s->set_sharpness(s, 0);
+  
+  // تنظیم denoise
+  s->set_denoise(s, 1);
+  
+  // تنظیم quality
+  s->set_quality(s, 80);
+  
+  // تنظیم white balance
+  s->set_whitebal(s, 1);
+  
+  // تنظیم gain control
+  s->set_gain_ctrl(s, 1);
+  
+  // تنظیم exposure control
+  s->set_exposure_ctrl(s, 1);
+  
+  // تنظیم bpc
+  s->set_bpc(s, 0);
+  
+  // تنظیم wpc
+  s->set_wpc(s, 1);
+  
+  // تنظیم raw gma
+  s->set_raw_gma(s, 1);
+  
+  // تنظیم lenc
+  s->set_lenc(s, 1);
+  
+  // تنظیم hmirror
+  s->set_hmirror(s, 0);
+  
+  // تنظیم vflip
+  s->set_vflip(s, 0);
+  
+  // تنظیم dcw
+  s->set_dcw(s, 1);
+  
+  frameDuration = 66; // 15 FPS
+}
+
+// ارسال heartbeat - بهبود یافته
+void sendHeartbeat() {
+  if (isConnected && isAuthenticated) {
+    String heartbeat = "{\"type\":\"heartbeat\",\"timestamp\":\"" + String(millis()) + 
+                      "\",\"fps\":" + String(fps, 2) + 
+                      ",\"memory\":" + String(ESP.getFreeHeap()) + 
+                      ",\"settings\":{\"quality\":" + String(currentPhotoQuality) + 
+                      ",\"flash_intensity\":" + String(currentFlashIntensity) + 
+                      ",\"flash_enabled\":" + String(currentFlashEnabled ? "true" : "false") + 
+                      ",\"brightness\":" + String(currentBrightness) + 
+                      ",\"contrast\":" + String(currentContrast) + 
+                      ",\"saturation\":" + String(currentSaturation) + 
+                      ",\"sharpness\":" + String(currentSharpness) + "}}";
+    client.send(heartbeat);
+  }
+}
+
+// ارسال وضعیت تنظیمات - جدید
+void sendSettingsStatus() {
+  if (isConnected && isAuthenticated && settingsChanged) {
+    String settings = "{\"type\":\"settings_status\",\"settings\":{\"quality\":" + String(currentPhotoQuality) + 
+                     ",\"flash_intensity\":" + String(currentFlashIntensity) + 
+                     ",\"flash_enabled\":" + String(currentFlashEnabled ? "true" : "false") + 
+                     ",\"brightness\":" + String(currentBrightness) + 
+                     ",\"contrast\":" + String(currentContrast) + 
+                     ",\"saturation\":" + String(currentSaturation) + 
+                     ",\"sharpness\":" + String(currentSharpness) + 
+                     ",\"auto_exposure\":" + String(currentAutoExposure ? "true" : "false") + 
+                     ",\"auto_white_balance\":" + String(currentAutoWhiteBalance ? "true" : "false") + "}}";
+    client.send(settings);
+    settingsChanged = false;
+  }
+}
+
+// ارسال ping - جدید
+void sendPing() {
+  if (isConnected && isAuthenticated) {
+    client.ping();
+    lastPingTime = millis();
+  }
+}
+
+// تابع پاکسازی حافظه - جدید
+void performMemoryCleanup() {
+  unsigned long currentTime = millis();
+  
+  // پاکسازی منظم حافظه
+  if (currentTime - lastMemoryCleanup >= memoryCleanupInterval) {
+    lastMemoryCleanup = currentTime;
+    
+    // بررسی حافظه آزاد
+    size_t freeMemory = ESP.getFreeHeap();
+    size_t minFreeMemory = 50000; // حداقل 50KB حافظه آزاد
+    
+    if (freeMemory < minFreeMemory) {
+      sendLog("Low memory detected: " + String(freeMemory) + " bytes, performing cleanup", "warning");
+      
+      // آزادسازی حافظه فریم‌های قدیمی
+      if (last_captured_fb) {
+        esp_camera_fb_return(last_captured_fb);
+        last_captured_fb = nullptr;
+        sendLog("Released old frame buffer", "info");
+      }
+      
+      // پاکسازی حافظه سیستم
+      ESP.getMinFreeHeap();
+      
+      // بررسی مجدد حافظه
+      size_t newFreeMemory = ESP.getFreeHeap();
+      if (newFreeMemory > freeMemory) {
+        sendLog("Memory cleanup successful: " + String(freeMemory) + " -> " + String(newFreeMemory) + " bytes", "info");
+        memoryCleanupCount = 0; // ریست کردن شمارنده
+      } else {
+        memoryCleanupCount++;
+        sendLog("Memory cleanup attempt " + String(memoryCleanupCount) + "/" + String(maxMemoryCleanupCount), "warning");
+        
+        // اگر پاکسازی موفق نبود، اقدامات شدیدتر
+        if (memoryCleanupCount >= maxMemoryCleanupCount) {
+          sendLog("Critical memory issue, restarting camera", "error");
+          client.send("{\"type\":\"system_error\",\"message\":\"Critical memory issue - restarting camera\"}");
+          restartCamera();
+          memoryCleanupCount = 0;
+        }
+      }
+    }
+  }
+  
+  // پاکسازی منظم buffer فریم‌ها
+  if (currentTime - lastFrameBufferCleanup >= frameBufferCleanupInterval) {
+    lastFrameBufferCleanup = currentTime;
+    
+    // بررسی و آزادسازی فریم‌های قدیمی
+    if (last_captured_fb) {
+      unsigned long frameAge = currentTime - manualPhotoStartTime;
+      if (frameAge > 5000) { // فریم‌های قدیمی‌تر از 5 ثانیه
+        esp_camera_fb_return(last_captured_fb);
+        last_captured_fb = nullptr;
+        sendLog("Released old frame buffer (age: " + String(frameAge) + "ms)", "info");
+      }
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("ESP32CAM Starting...");
+  
+  // راه‌اندازی NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+  
+  // راه‌اندازی PWM برای فلاش
+  ledcSetup(FLASH_PWM_CHANNEL, FLASH_PWM_FREQ, FLASH_PWM_RESOLUTION);
+  ledcAttachPin(FLASH_GPIO_NUM, FLASH_PWM_CHANNEL);
+  ledcWrite(FLASH_PWM_CHANNEL, 0);
+  
+  // راه‌اندازی دوربین
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sccb_sda = SIOD_GPIO_NUM;
+  config.pin_sccb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+  config.xclk_freq_hz = 20000000;
+  config.pixel_format = PIXFORMAT_JPEG;
+  config.frame_size = FRAMESIZE_VGA;
+  config.jpeg_quality = 80;
+  config.fb_count = 2;
+  
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK) {
+    Serial.printf("Camera init failed with error 0x%x", err);
+    return;
+  }
+  
+  // تنظیم WebSocket callback
+  client.onEvent(onEventsCallback);
+  
+  // اتصال به WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+  // اتصال به WebSocket
+  connectWebSocket();
+  
+  Serial.println("ESP32CAM setup complete");
+}
+
+void loop() {
+  client.poll();
+
+  // بررسی timeout عکس دستی
+  if (isManualPhotoMode && (millis() - manualPhotoStartTime > 2000)) {
+    isManualPhotoMode = false;
+    sendLog("Manual photo mode timeout - forcing deactivation", "warning");
+    client.send("{\"type\":\"photo_error\",\"message\":\"Photo capture timeout\"}");
+  }
+
+  // بررسی قطع طولانی
+  if (!isConnected && lastDisconnectTime != 0 && (millis() - lastDisconnectTime >= maxDisconnectDuration)) {
+    String msg = "Long disconnection detected. Entering deep sleep...";
+    sendLog(msg, "error");
+    WiFi.disconnect();
+    deepSleepCount++;
+    unsigned long sleepTime = (deepSleepCount > maxDeepSleepCount) ? 60000000 : 30000000;
+    String sleepMsg = "Deep sleep count: " + String(deepSleepCount) + ", sleeping for " + String(sleepTime) + " ms";
+    sendLog(sleepMsg, "error");
+    ledcWrite(FLASH_PWM_CHANNEL, 0);
+    esp_sleep_enable_timer_wakeup(sleepTime);
+    esp_deep_sleep_start();
+  }
+
+  // ارسال heartbeat و ping
+  if (isConnected && isAuthenticated) {
+    if (millis() - lastHeartbeatTime >= heartbeatInterval) {
+      sendHeartbeat();
+      lastHeartbeatTime = millis();
+    }
+    
+    if (millis() - lastPingTime >= pingInterval) {
+      sendPing();
+    }
+  }
+  
+  // پاکسازی منظم حافظه - جدید
+  performMemoryCleanup();
+
+  // مدیریت اتصال پایدار - فقط از پورت IP استفاده کن
+  if (!isConnected) {
+    // بررسی زمان تلاش مجدد
+    if (millis() - lastConnectionAttempt > connectionSwitchInterval) {
+      connectionFailures = 0;
+      sendLog("Retrying connection to IP address (Port 40345)", "info");
+      lastConnectionAttempt = millis();
+    }
+    
+    connectWebSocket();
+    delay(reconnectDelay);
+    return;
+  }
+
+  // بررسی احراز هویت timeout
+  if (isConnected && !isAuthenticated && (millis() - authTimeout > authTimeoutDuration)) {
+    sendLog("Authentication timeout, reconnecting...", "error");
+    client.close();
+    isConnected = false;
+    delay(1000);
+    return;
+  }
+
+  // بررسی حافظه - بهبود یافته
+  size_t freeMemory = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  if (freeMemory < 30000) {
+    sendLog("Low memory! Skipping frame", "warning");
+    frameErrorCount++;
+    if (frameErrorCount >= maxFrameErrors) {
+      sendLog("Critical: Persistent low memory - restarting camera...", "error");
+      client.send("{\"type\":\"system_error\",\"message\":\"Critical low memory - restarting camera\"}");
+      restartCamera();
+      frameErrorCount = 0;
+      delay(1000);
+    }
+    delay(100);
+    return;
+  } else {
+    frameErrorCount = 0;
+  }
+  
+  // بررسی حافظه بحرانی
+  if (freeMemory < 15000) {
+    sendLog("Critical memory! Emergency cleanup", "error");
+    client.send("{\"type\":\"system_error\",\"message\":\"Critical memory - emergency cleanup\"}");
+    ESP.getMinFreeHeap();
+    delay(500);
+    return;
+  }
+  
+  // بررسی حافظه اضافی
+  static unsigned long lastMemoryCheck = 0;
+  if (millis() - lastMemoryCheck > 20000) {
+    lastMemoryCheck = millis();
+    try {
+      size_t freeMemory = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+      if (freeMemory < 60000) {
+        sendLog("Memory cleanup needed", "warning");
+        ESP.getMinFreeHeap();
+        if (freeMemory < 40000) {
+          sendLog("Critical memory cleanup", "error");
+          delay(100);
+        }
+      }
+      
+      size_t largestFreeBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+      if (largestFreeBlock < 10000) {
+        sendLog("Memory fragmentation detected", "warning");
+        client.send("{\"type\":\"system_warning\",\"message\":\"Memory fragmentation detected\"}");
+      }
+      
+    } catch (...) {
+      sendLog("Memory check error", "error");
+    }
+  }
+  
+  // بررسی تعداد خطاهای دوربین
+  if (cameraErrorCount > 10) {
+    sendLog("Too many camera errors - restarting camera...", "error");
+    client.send("{\"type\":\"system_error\",\"message\":\"Too many camera errors - restarting camera\"}");
+    restartCamera();
+    cameraErrorCount = 0;
+    delay(500);
+    return;
+  }
+  
+  // بررسی خطاهای سیستم
+  static unsigned long lastSystemCheck = 0;
+  if (millis() - lastSystemCheck > 60000) {
+    lastSystemCheck = millis();
+    
+    size_t freeHeap = ESP.getFreeHeap();
+    if (freeHeap < 50000) {
+      sendLog("Low heap memory detected", "warning");
+      client.send("{\"type\":\"system_warning\",\"message\":\"Low heap memory\"}");
+    }
+    
+    int32_t rssi = WiFi.RSSI();
+    if (rssi < -85) {
+      sendLog("Weak WiFi signal detected", "warning");
+      client.send("{\"type\":\"system_warning\",\"message\":\"Weak WiFi signal\"}");
+    }
+    
+    unsigned long uptime = millis() / 1000;
+    if (uptime > 86400) {
+      sendLog("System uptime: " + String(uptime / 3600) + " hours", "info");
+    }
+    
+    if (cameraErrorCount > 5) {
+      sendLog("High camera error count: " + String(cameraErrorCount), "warning");
+      client.send("{\"type\":\"system_warning\",\"message\":\"High camera error count\"}");
+    }
+  }
+  
+  // بررسی وضعیت WiFi
+  if (WiFi.status() != WL_CONNECTED) {
+    sendLog("WiFi disconnected - attempting reconnect...", "warning");
+    WiFi.reconnect();
+    delay(1000);
+    if (WiFi.status() != WL_CONNECTED) {
+      sendLog("WiFi reconnect failed - entering deep sleep...", "error");
+      client.send("{\"type\":\"system_error\",\"message\":\"WiFi connection lost - entering deep sleep\"}");
+      deepSleepCount++;
+      unsigned long sleepTime = (deepSleepCount > maxDeepSleepCount) ? 60000000 : 30000000;
+      ledcWrite(FLASH_PWM_CHANNEL, 0);
+      esp_sleep_enable_timer_wakeup(sleepTime);
+      esp_deep_sleep_start();
+    }
+  }
+
+  // تنظیم نوردهی و فلاش
+  unsigned long frameDuration = 66;
+  if (millis() - lastAecAdjustTime >= aecAdjustInterval) {
+    sensor_t *s = esp_camera_sensor_get();
+    adjustExposure(s, frameDuration);
+    lastAecAdjustTime = millis();
+  }
+
+  // گرفتن فریم - بهبود یافته
+  camera_fb_t* fb = esp_camera_fb_get();
+  if (!fb) {
+    sendLog("Camera capture failed", "error");
+    cameraErrorCount++;
+    frameErrorCount++;
+    if (frameErrorCount >= maxFrameErrors) {
+      sendLog("Max frame errors reached, restarting camera...", "error");
+      client.send("{\"type\":\"system_error\",\"message\":\"Max frame errors reached - restarting camera\"}");
+      restartCamera();
+      frameErrorCount = 0;
+      cameraErrorCount = 0;
+      delay(500);
+    }
+    return;
+  } else {
+    frameErrorCount = 0;
+    cameraErrorCount = 0;
+  }
+  
+  // بررسی کیفیت فریم
+  if (fb->len < 1000) {
+    sendLog("Invalid frame size detected", "warning");
+    esp_camera_fb_return(fb);
+    frameErrorCount++;
+    if (frameErrorCount >= maxFrameErrors) {
+      sendLog("Too many invalid frames, restarting camera...", "error");
+      client.send("{\"type\":\"system_error\",\"message\":\"Too many invalid frames - restarting camera\"}");
+      restartCamera();
+      frameErrorCount = 0;
+      delay(500);
+    }
+    return;
+  }
+
+  // ارسال فریم - بهبود یافته
+  if (isConnected && isAuthenticated && !isManualPhotoMode) {
+    // ارسال metadata قبل از فریم
+    String frameMetadata = "{\"type\":\"frame_metadata\",\"size\":" + String(fb->len) + ",\"format\":\"jpeg\",\"timestamp\":\"" + String(millis()) + "\"}";
+    client.send(frameMetadata);
+    
+    bool sent = client.sendBinary((const char*)fb->buf, fb->len);
+    if (!sent) {
+      sendLog("Failed to send frame", "error");
+    } else if (millis() - lastLogTime >= logInterval) {
+      String msg = "Sent frame of size " + String(fb->len) + " bytes";
+      sendLog(msg, "info");
+    }
+  } else if (isManualPhotoMode) {
+    sendLog("Skipping frame during manual photo mode", "info");
+  }
+
+  // آزادسازی حافظه فریم
+    esp_camera_fb_return(fb);
+
+  // محاسبه FPS
+  frameCount++;
+  unsigned long currentTime = millis();
+  if (currentTime - lastFrameTime >= 1000) {
+    fps = frameCount * 1000.0 / (currentTime - lastFrameTime);
+    if (millis() - lastLogTime >= logInterval) {
+      String msg = "FPS: " + String(fps, 2);
+      sendLog(msg, "info");
+      lastLogTime = millis();
+    }
+    frameCount = 0;
+    lastFrameTime = currentTime;
+  }
+
+  // کنترل نرخ فریم
+  unsigned long elapsed = millis() - currentTime;
+  unsigned long targetDelay = frameDuration - elapsed;
+  
+  if (targetDelay > 0 && targetDelay < 100) {
+    delay(targetDelay);
+  } else if (targetDelay >= 100) {
+    unsigned long startTime = millis();
+    while (millis() - startTime < targetDelay) {
+      yield();
+      if (millis() - startTime >= targetDelay) break;
+    }
+  }
+}

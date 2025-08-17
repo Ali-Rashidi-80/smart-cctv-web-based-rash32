@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32CAM WebSocket Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .connecting { background-color: #fff3cd; color: #856404; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-info { color: #007bff; }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ESP32CAM WebSocket Connection Test</h1>
+        
+        <div id="status" class="status disconnected">Disconnected</div>
+        
+        <div>
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            <button id="sendTestBtn" onclick="sendTestMessage()" disabled>Send Test Message</button>
+            <button id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <h3>Connection Details:</h3>
+        <p><strong>URL:</strong> wss://smart-cctv-rash32.chbk.app/ws/esp32cam</p>
+        <p><strong>Authorization:</strong> Bearer esp32cam_secure_token_2024</p>
+        
+        <h3>Connection Log:</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(status, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = status;
+            statusDiv.className = `status ${className}`;
+        }
+
+        function updateButtons() {
+            document.getElementById('connectBtn').disabled = isConnected;
+            document.getElementById('disconnectBtn').disabled = !isConnected;
+            document.getElementById('sendTestBtn').disabled = !isConnected;
+        }
+
+        function connect() {
+            if (ws) {
+                ws.close();
+            }
+
+            log('Attempting to connect...', 'info');
+            updateStatus('Connecting...', 'connecting');
+            updateButtons();
+
+            try {
+                ws = new WebSocket('wss://smart-cctv-rash32.chbk.app/ws/esp32cam');
+                
+                ws.onopen = function(event) {
+                    log('WebSocket connection opened', 'success');
+                    isConnected = true;
+                    updateStatus('Connected', 'connected');
+                    updateButtons();
+                    
+                    // Send authorization header
+                    const authMessage = {
+                        type: 'auth',
+                        token: 'esp32cam_secure_token_2024'
+                    };
+                    ws.send(JSON.stringify(authMessage));
+                    log('Sent authentication message', 'info');
+                };
+
+                ws.onmessage = function(event) {
+                    log(`Received: ${event.data}`, 'info');
+                };
+
+                ws.onclose = function(event) {
+                    log(`Connection closed. Code: ${event.code}, Reason: ${event.reason}`, 'warning');
+                    isConnected = false;
+                    updateStatus('Disconnected', 'disconnected');
+                    updateButtons();
+                };
+
+                ws.onerror = function(error) {
+                    log(`WebSocket error: ${error}`, 'error');
+                    updateStatus('Error', 'error');
+                    isConnected = false;
+                    updateButtons();
+                };
+
+            } catch (error) {
+                log(`Connection error: ${error.message}`, 'error');
+                updateStatus('Error', 'error');
+                isConnected = false;
+                updateButtons();
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendTestMessage() {
+            if (ws && isConnected) {
+                const testMessage = {
+                    type: 'test',
+                    message: 'Hello from ESP32CAM test client',
+                    timestamp: new Date().toISOString()
+                };
+                ws.send(JSON.stringify(testMessage));
+                log('Sent test message', 'info');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Auto-connect on page load
+        window.onload = function() {
+            log('Page loaded, ready to test connection', 'info');
+        };
+    </script>
+</body>
+</html> 

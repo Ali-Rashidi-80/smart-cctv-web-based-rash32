@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Controls Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        .custom-video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 20px;
+            opacity: 1;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: all 0.2s ease;
+            z-index: 1001;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+        
+        .video-player-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            border-radius: 3px;
+            width: 0%;
+        }
+        
+        .time-display {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Modal Controls Test</h2>
+        
+        <div class="video-player-wrapper">
+            <video id="mainVideoPlayer" width="100%" height="100%" controls>
+                <source src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAGxtZGF0AAACmwYF//+p3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjYzOSBhOWE1Y2YgLSBILjI2NC9NUEVHLTQgQVZIMCAtIG9yaWdpbmFsIDI2NDIzIC0gLm9uZWFybXMgLSBvdmVyc2NhbGUgLSBza2lwc2NhbGUgLSB0aW1lc2NhbGUgLSBqYXZhc2NyaXB0IC0gdW5pY29kZSAtIHN1YnRpdGxlcyAtIGxhbmd1YWdlIC0gaWRlbnRpZmllciAtIG1ldGFkYXRhIC0gdm9pZCAoZXJyb3Igc2NyaXB0KQ==" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            
+            <div class="custom-video-controls">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                
+                <div class="time-display">
+                    <span class="current-time">00:00</span> / <span class="duration">00:00</span>
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="control-btn" id="playPauseBtn" onclick="testClick('playPause')">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    
+                    <button class="control-btn" id="volumeBtn" onclick="testClick('volume')">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    
+                    <button class="control-btn" id="fullscreenBtn" onclick="testClick('fullscreen')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-result" id="testResult">
+            <h4>Test Results:</h4>
+            <div id="testOutput">Click buttons to test functionality...</div>
+        </div>
+        
+        <div class="mt-3">
+            <button class="btn btn-primary" onclick="testAllButtons()">Test All Buttons</button>
+            <button class="btn btn-secondary" onclick="checkButtonStates()">Check Button States</button>
+            <button class="btn btn-info" onclick="forceButtonInteractivity()">Force Button Interactivity</button>
+        </div>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        
+        function testClick(buttonType) {
+            clickCount++;
+            console.log(`${buttonType} button clicked! Count: ${clickCount}`);
+            
+            const output = document.getElementById('testOutput');
+            output.innerHTML += `<p>✅ ${buttonType} button clicked at ${new Date().toLocaleTimeString()} (Count: ${clickCount})</p>`;
+            
+            // Update test result styling
+            const testResult = document.getElementById('testResult');
+            testResult.className = 'test-result success';
+            
+            // Simulate button action
+            switch(buttonType) {
+                case 'playPause':
+                    const video = document.getElementById('mainVideoPlayer');
+                    if (video.paused) {
+                        video.play();
+                        document.querySelector('#playPauseBtn i').className = 'fas fa-pause';
+                    } else {
+                        video.pause();
+                        document.querySelector('#playPauseBtn i').className = 'fas fa-play';
+                    }
+                    break;
+                case 'volume':
+                    const volumeBtn = document.getElementById('volumeBtn');
+                    const icon = volumeBtn.querySelector('i');
+                    if (icon.className.includes('volume-mute')) {
+                        icon.className = 'fas fa-volume-up';
+                    } else {
+                        icon.className = 'fas fa-volume-mute';
+                    }
+                    break;
+                case 'fullscreen':
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                        document.querySelector('#fullscreenBtn i').className = 'fas fa-expand';
+                    } else {
+                        document.documentElement.requestFullscreen();
+                        document.querySelector('#fullscreenBtn i').className = 'fas fa-compress';
+                    }
+                    break;
+            }
+        }
+        
+        function testAllButtons() {
+            console.log('Testing all buttons...');
+            const buttons = ['playPause', 'volume', 'fullscreen'];
+            let testCount = 0;
+            
+            buttons.forEach((buttonType, index) => {
+                setTimeout(() => {
+                    testClick(buttonType);
+                    testCount++;
+                    
+                    if (testCount === buttons.length) {
+                        document.getElementById('testOutput').innerHTML += '<p><strong>🎉 All buttons tested successfully!</strong></p>';
+                    }
+                }, index * 500);
+            });
+        }
+        
+        function checkButtonStates() {
+            const buttons = [
+                { id: 'playPauseBtn', name: 'Play/Pause' },
+                { id: 'volumeBtn', name: 'Volume' },
+                { id: 'fullscreenBtn', name: 'Fullscreen' }
+            ];
+            
+            let output = '<h5>Button Status:</h5>';
+            buttons.forEach(btn => {
+                const element = document.getElementById(btn.id);
+                if (element) {
+                    const style = getComputedStyle(element);
+                    output += `
+                        <p><strong>${btn.name}:</strong> ✅ Found
+                        <br>z-index: ${style.zIndex}
+                        <br>pointer-events: ${style.pointerEvents}
+                        <br>opacity: ${style.opacity}
+                        <br>visibility: ${style.visibility}
+                        <br>cursor: ${style.cursor}
+                        <br>disabled: ${element.disabled}
+                        </p>
+                    `;
+                } else {
+                    output += `<p><strong>${btn.name}:</strong> ❌ Not found</p>`;
+                }
+            });
+            
+            document.getElementById('testOutput').innerHTML = output;
+        }
+        
+        function forceButtonInteractivity() {
+            const buttons = document.querySelectorAll('.control-btn');
+            buttons.forEach((btn, index) => {
+                // Force styles
+                btn.style.pointerEvents = 'auto';
+                btn.style.cursor = 'pointer';
+                btn.style.zIndex = '1001';
+                btn.style.opacity = '1';
+                btn.style.visibility = 'visible';
+                btn.style.position = 'relative';
+                
+                // Remove any disabled attributes
+                btn.removeAttribute('disabled');
+                btn.removeAttribute('aria-disabled');
+                
+                console.log(`Button ${index} forced interactive:`, btn.id);
+            });
+            
+            document.getElementById('testOutput').innerHTML += '<p>🔧 All buttons forced to be interactive</p>';
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkButtonStates();
+                console.log('Page loaded, buttons ready for testing');
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

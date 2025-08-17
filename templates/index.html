@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ translations[lang]['siteTitle'] }}</title>
+    <link rel="stylesheet" href="/static/css/index/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body class="lang-fa">
+    <header class="main-header desktop-header" id="mainHeader">
+        <div class="header-logo">
+            <img src="/static/images/logo.png" alt="{{ translations[lang]['logoAlt'] }}">
+            <span id="headerTypewriter"></span>
+        </div>
+        <div class="header-controls">
+            <button id="themeToggle" class="btn btn-outline-secondary" title="{{ translations[lang]['themeLight'] }}"><i id="themeIcon" class="fas fa-moon"></i></button>
+            <button id="languageToggle" class="btn btn-outline-secondary" title="{{ translations[lang]['langLabel'] }}"><i class="fas fa-globe"></i></button>
+            <button id="profileHeaderBtn" class="btn btn-outline-primary ms-2" title="{{ translations[lang]['profileUsername'] }}">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-panel">
+        <div class="accordion" id="mainAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#introCollapse" aria-expanded="false" aria-controls="introCollapse" title="{{ translations[lang]['introHeading'] }}">
+                        <span class="accordion-title-group" data-key="introHeading">{{ translations[lang]['introHeading'] }}</span>
+                    </button>
+                </h2>
+                <div id="introCollapse" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body intro-container">
+                        <h3 class="intro-title" data-key="introWelcome">{{ translations[lang]['introWelcome'] }}</h3>
+                        
+                        <!-- Hero Section -->
+                        <div class="intro-hero-row">
+                            <div class="intro-hero-text">
+                                <p class="intro-main-description" data-key="introMainDesc">{{ translations[lang]['introMainDesc'] }}</p>
+                                
+                                <!-- Key Features -->
+                                <div class="intro-features-section">
+                                    <h4 class="intro-subtitle" data-key="keyFeatures">{{ translations[lang]['keyFeatures'] }}</h4>
+                                    <ul class="intro-features-list">
+                                        <li data-key="featureFast">{{ translations[lang]['featureFast'] }}</li>
+                                        <li data-key="featureLive">{{ translations[lang]['featureLive'] }}</li>
+                                        <li data-key="featureServo">{{ translations[lang]['featureServo'] }}</li>
+                                        <li data-key="featureNotif">{{ translations[lang]['featureNotif'] }}</li>
+                                        <li data-key="featureReport">{{ translations[lang]['featureReport'] }}</li>
+                                        <li data-key="featureMotion">{{ translations[lang]['featureMotion'] }}</li>
+                                        <li data-key="featureRemote">{{ translations[lang]['featureRemote'] }}</li>
+                                        <li data-key="featureEncrypt">{{ translations[lang]['featureEncrypt'] }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="intro-hero-visual">
+                                <div class="intro-hero-img">
+                                    <img src="/static/images/logo.png" alt="logo" style="max-width:90px;">
+                                </div>
+                                <div class="intro-hero-chart">
+                                    <svg width="90" height="90" viewBox="0 0 90 90">
+                                        <circle cx="45" cy="45" r="40" fill="#f8f9fa" stroke="#6c63ff" stroke-width="4"/>
+                                        <path d="M45 45 L45 15 A30 30 0 1 1 15 45 Z" fill="#6c63ff" opacity="0.25"/>
+                                        <text x="45" y="52" text-anchor="middle" font-size="18" fill="#6c63ff" font-weight="bold">AI</text>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Section -->
+                        <div class="intro-stats-section mt-4">
+                            <h4 class="intro-subtitle" data-key="techSpecs">{{ translations[lang]['techSpecs'] }}</h4>
+                            <div class="intro-stats-grid">
+                                <div class="intro-stat-item">
+                                    <div class="stat-number" data-key="hdQuality">{{ translations[lang]['hdQuality'] }}</div>
+                                    <div class="stat-label" data-key="hdLabel">{{ translations[lang]['hdLabel'] }}</div>
+                                </div>
+                                <div class="intro-stat-item">
+                                    <div class="stat-number" data-key="frameRate">{{ translations[lang]['frameRate'] }}</div>
+                                    <div class="stat-label" data-key="frameRateLabel">{{ translations[lang]['frameRateLabel'] }}</div>
+                                </div>
+                                <div class="intro-stat-item">
+                                    <div class="stat-number" data-key="viewAngle">{{ translations[lang]['viewAngle'] }}</div>
+                                    <div class="stat-label" data-key="viewAngleLabel">{{ translations[lang]['viewAngleLabel'] }}</div>
+                                </div>
+                                <div class="intro-stat-item">
+                                    <div class="stat-number" data-key="wifiConnection">{{ translations[lang]['wifiConnection'] }}</div>
+                                    <div class="stat-label" data-key="wifiConnectionLabel">{{ translations[lang]['wifiConnectionLabel'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technology Stack -->
+                        <div class="intro-tech-section mt-4">
+                            <h4 class="intro-subtitle" data-key="techStack">{{ translations[lang]['techStack'] }}</h4>
+                            <div class="intro-tech-grid">
+                                <div class="intro-tech-item">
+                                    <span class="tech-icon">🐍</span>
+                                    <span class="tech-name" data-key="techPython">{{ translations[lang]['techPython'] }}</span>
+                                </div>
+                                <div class="intro-tech-item">
+                                    <span class="tech-icon">🌐</span>
+                                    <span class="tech-name" data-key="techWebSocket">{{ translations[lang]['techWebSocket'] }}</span>
+                                </div>
+                                <div class="intro-tech-item">
+                                    <span class="tech-icon">⚡</span>
+                                    <span class="tech-name" data-key="techFastAPI">{{ translations[lang]['techFastAPI'] }}</span>
+                                </div>
+                                <div class="intro-tech-item">
+                                    <span class="tech-icon">📊</span>
+                                    <span class="tech-name" data-key="techSQLite">{{ translations[lang]['techSQLite'] }}</span>
+                                </div>
+                                <div class="intro-tech-item">
+                                    <span class="tech-icon">📱</span>
+                                    <span class="tech-name" data-key="techHTML">{{ translations[lang]['techHTML'] }}</span>
+                                </div>
+                                <div class="intro-tech-item">
+                                    <span class="tech-icon">🔧</span>
+                                    <span class="tech-name" data-key="techESP32">{{ translations[lang]['techESP32'] }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Benefits Section -->
+                        <div class="intro-benefits mt-4">
+                            <h5 data-key="benefitsTitle">{{ translations[lang]['benefitsTitle'] }}</h5>
+                            <div class="intro-benefit-list">
+                                <div class="intro-benefit-item" data-key="benefit24h">{{ translations[lang]['benefit24h'] }}</div>
+                                <div class="intro-benefit-item" data-key="benefitBrowser">{{ translations[lang]['benefitBrowser'] }}</div>
+                                <div class="intro-benefit-item" data-key="benefitLang">{{ translations[lang]['benefitLang'] }}</div>
+                                <div class="intro-benefit-item" data-key="benefitServo">{{ translations[lang]['benefitServo'] }}</div>
+                                <div class="intro-benefit-item" data-key="benefitCost">{{ translations[lang]['benefitCost'] }}</div>
+                                <div class="intro-benefit-item" data-key="benefitFast">{{ translations[lang]['benefitFast'] }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Use Cases -->
+                        <div class="intro-use-cases mt-4">
+                            <h4 class="intro-subtitle" data-key="useCases">{{ translations[lang]['useCases'] }}</h4>
+                            <div class="intro-use-cases-grid">
+                                <div class="intro-use-case-item">
+                                    <span class="use-case-icon">🏠</span>
+                                    <span class="use-case-text" data-key="useHome">{{ translations[lang]['useHome'] }}</span>
+                                </div>
+                                <div class="intro-use-case-item">
+                                    <span class="use-case-icon">🏢</span>
+                                    <span class="use-case-text" data-key="useOffice">{{ translations[lang]['useOffice'] }}</span>
+                                </div>
+                                <div class="intro-use-case-item">
+                                    <span class="use-case-icon">🏪</span>
+                                    <span class="use-case-text" data-key="useStore">{{ translations[lang]['useStore'] }}</span>
+                                </div>
+                                <div class="intro-use-case-item">
+                                    <span class="use-case-icon">🚗</span>
+                                    <span class="use-case-text" data-key="useParking">{{ translations[lang]['useParking'] }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Call to Action -->
+                        <div class="intro-cta mt-4">
+                            <span class="intro-cta-text" data-key="ctaReady">{{ translations[lang]['ctaReady'] }}</span>
+                            <div class="intro-cta-subtitle" data-key="ctaUse">{{ translations[lang]['ctaUse'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cameraCollapse" aria-expanded="false" aria-controls="cameraCollapse" title="{{ translations[lang]['cameraHeading'] }}">
+                        <span class="accordion-title-group" data-key="cameraHeading">{{ translations[lang]['cameraHeading'] }}</span>
+                    </button>
+                </h2>
+                <div id="cameraCollapse" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        <div class="stream-section">
+                            <h4 class="section-title" data-key="liveStreamTitle">{{ translations[lang]['liveStreamTitle'] }}</h4>
+                            <div class="stream-video-container">
+                                <div class="stream-placeholder" id="streamPlaceholder">
+                                    <div class="placeholder-icon" aria-label="{{ translations[lang]['stream'] }}">
+                                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="8" y="16" width="32" height="32" rx="6" fill="#6c757d" stroke="#495057" stroke-width="2"/>
+                                            <path d="M56 20L44 28V36L56 44V20Z" fill="#6c757d" fill-opacity="0.7"/>
+                                        </svg>
+                                    </div>
+                                    <span class="stream-off-icon" aria-label="Stream is off">
+                                      <!-- SVG: Video Off -->
+                                      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:auto;">
+                                        <rect x="8" y="16" width="32" height="32" rx="6" fill="#222" stroke="#ff0055" stroke-width="3"/>
+                                        <path d="M56 20L44 28V36L56 44V20Z" fill="#ff0055" fill-opacity="0.7"/>
+                                        <line x1="12" y1="52" x2="52" y2="12" stroke="#ff0055" stroke-width="4" stroke-linecap="round"/>
+                                      </svg>
+                                    </span>
+                                </div>
+                                <video id="streamVideo" autoplay muted></video>
+                            </div>
+                            <div class="stream-controls mt-3">
+                                <button id="toggleStreamBtn" class="btn btn-success btn-custom" data-key="toggleStreamBtn"></button>
+                                <button id="deviceModeToggle" class="btn btn-outline-secondary btn-custom" title="{{ translations[lang]['deviceModeToggle'] }}"><i class="fas fa-desktop me-2"></i> {{ translations[lang]['desktopMode'] }}</button>
+                            </div>
+                        </div>
+                        <div class="stream-section mt-4">
+                            <h4 class="section-title" data-key="captureImageTitle">{{ translations[lang]['captureImageTitle'] }}</h4>
+                            <div class="control-panel">
+                                <label for="photoQuality" data-key="photoQualityLabel">{{ translations[lang]['photoQualityLabel'] }}: <span id="qualityValue">80%</span></label>
+                                <input type="range" class="form-range" id="photoQuality" min="10" max="100" value="80">
+                                <div id="flashControls">
+                                    <label for="flashIntensity" data-key="flashIntensityLabel">{{ translations[lang]['flashIntensityLabel'] }}: <span id="flashIntensityValue">50%</span></label>
+                                    <input type="range" class="form-range" id="flashIntensity" min="0" max="100" value="50">
+                                </div>
+                                <div class="form-check form-switch mt-3">
+                                    <input class="form-check-input" type="checkbox" id="flashToggle">
+                                    <label class="form-check-label" for="flashToggle" data-key="enableFlashLabel">{{ translations[lang]['enableFlashLabel'] }}</label>
+                                </div>
+                                <button id="capturePhotoBtn" class="btn btn-primary btn-custom mt-3" title="{{ translations[lang]['capturePhoto'] }}" data-key="capturePhoto"><i class="fas fa-camera me-2"></i> {{ translations[lang]['capturePhoto'] }}</button>
+                            </div>
+                        </div>
+                        <div class="servo-section mt-4">
+                            <h4 class="section-title" data-key="servoControlTitle">{{ translations[lang]['servoControlTitle'] }}</h4>
+                            <div class="control-panel">
+                                <label for="servoX" data-key="servoXLabel">{{ translations[lang]['servoXLabel'] }}: <span id="servoXValue">90°</span></label>
+                                <input type="range" class="form-range" id="servoX" min="0" max="180" value="90">
+                                <input type="number" class="form-control mt-2" id="servoXNumber" min="0" max="180" value="90">
+                                <label for="servoY" class="mt-3" data-key="servoYLabel">{{ translations[lang]['servoYLabel'] }}: <span id="servoYValue">90°</span></label>
+                                <input type="range" class="form-range" id="servoY" min="0" max="180" value="90">
+                                <input type="number" class="form-control mt-2" id="servoYNumber" min="0" max="180" value="90">
+                                <div class="d-flex gap-3 mt-3">
+                                    <button id="sendServoBtn" class="btn btn-primary btn-send" title="{{ translations[lang]['send'] }}" data-key="send"><i class="fas fa-paper-plane me-2"></i> {{ translations[lang]['send'] }}</button>
+                                    <button id="resetServoBtn" class="btn btn-secondary btn-custom" title="{{ translations[lang]['reset'] }}" data-key="reset"><i class="fas fa-undo me-2"></i> {{ translations[lang]['reset'] }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#galleryCollapse" aria-expanded="false" aria-controls="galleryCollapse" title="{{ translations[lang]['galleryHeading'] }}">
+                        <span class="accordion-title-group" data-key="galleryHeading">{{ translations[lang]['galleryHeading'] }}</span>
+                    </button>
+                </h2>
+                <div id="galleryCollapse" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                                <div class="gallery-container" id="galleryContainer">
+                            {% for photo in photos %}
+                                <div class="gallery-item" data-url="{{ photo.url }}" data-timestamp="{{ photo.timestamp | datetimeformat(lang) }}" data-filename="{{ photo.filename }}">
+                                    <img src="{{ photo.url }}" alt="{{ translations[lang]['securityImage'] }}" loading="lazy">
+                                    <div class="gallery-info">
+                                        <p>{{ translations[lang]['date'] }}: {{ photo.timestamp | datetimeformat(lang) }}</p>
+                                    </div>
+                                    <div class="gallery-actions">
+                                        <button class="btn btn-sm btn-outline-success download-photo-btn" title="{{ translations[lang]['download'] }}">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-photo-btn" title="{{ translations[lang]['delete'] }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if has_more_photos %}
+                            <div class="gallery-nav">
+                                <button id="loadMoreBtn" class="gallery-nav-btn next" title="{{ translations[lang]['loadMore'] }}"><i class="fas fa-plus"></i> {{ translations[lang]['loadMore'] }}</button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#videosCollapse" aria-expanded="false" aria-controls="videosCollapse" title="{{ translations[lang]['videosHeading'] }}">
+                        <span class="accordion-title-group" data-key="videosHeading">{{ translations[lang]['videosHeading'] }}</span>
+                    </button>
+                </h2>
+                <div id="videosCollapse" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        <div class="video-gallery-container" id="videosContainer">
+                            {% for video in videos %}
+                            <div class="video-gallery-item" data-url="{{ video.url }}" data-timestamp="{{ video.timestamp | datetimeformat(lang) }}" data-filename="{{ video.filename }}" data-is-video="true">
+                                <div class="video-thumbnail-container">
+                                    <div class="video-thumbnail">
+                                        <video class="thumbnail-video" muted preload="metadata" playsinline controlslist="nodownload" disablePictureInPicture disableRemotePlayback poster="/video_poster/{{ video.filename }}">
+                                            <source src="{{ video.url }}" type="video/mp4">
+                                        </video>
+                                        <div class="video-overlay">
+                                            <div class="play-button">
+                                                <i class="fas fa-play-circle"></i>
+                                            </div>
+                                            <div class="video-duration" id="duration-{{ loop.index }}">--:--</div>
+                                        </div>
+                                        <!-- Loading indicator for poster generation -->
+                                        <div class="video-loading" id="loading-{{ loop.index }}" style="display: none;">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-title">{{ video.filename }}</div>
+                                    <div class="video-meta">
+                                        <span class="video-date">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ video.timestamp | datetimeformat(lang) }}
+                                        </span>
+                                        <span class="video-size" id="size-{{ loop.index }}">--</span>
+                                    </div>
+                                    <!-- Enhanced metadata display -->
+                                    <div class="video-metadata" id="metadata-{{ loop.index }}" style="display: none;">
+                                        <div class="metadata-row">
+                                            <span class="metadata-label">Resolution:</span>
+                                            <span class="metadata-value" id="resolution-{{ loop.index }}">--</span>
+                                        </div>
+                                        <div class="metadata-row">
+                                            <span class="metadata-label">Duration:</span>
+                                            <span class="metadata-value" id="duration-full-{{ loop.index }}">--</span>
+                                        </div>
+                                        <div class="metadata-row">
+                                            <span class="metadata-label">FPS:</span>
+                                            <span class="metadata-value" id="fps-{{ loop.index }}">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="video-actions">
+                                    <button class="btn btn-sm btn-outline-primary play-video-btn" title="پخش ویدیو">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success download-video-btn" title="دانلود">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-video-btn" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if has_more_videos %}
+                        <div class="video-gallery-nav">
+                            <button id="loadMoreVideosBtn" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-2"></i>{{ translations[lang]['loadMore'] }}
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#smartControlCollapse" aria-expanded="false" aria-controls="smartControlCollapse" title="{{ translations[lang]['smartFeaturesHeading'] }}">
+                        <span class="accordion-title-group" data-key="smartFeaturesHeading">{{ translations[lang]['smartFeaturesHeading'] }}</span>
+                    </button>
+                </h2>
+                <div id="smartControlCollapse" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        <!-- Smart Security Panel -->
+                        <div id="smartMotionPanelDesktop" class="smart-security-panel mb-4">
+                            <div class="smart-security-header">
+                                <span data-key="smartFeaturesDesc">{{ translations[lang]['smartFeaturesDesc'] }}</span>
+                            </div>
+                            <div class="smart-motion-toggles" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+                                <div class="form-switch flex-column align-items-center text-center" style="display: flex;" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+                                    <input class="smart-switch" type="checkbox" id="motionDetectToggleDesktop">
+                                    <label class="form-check-label mt-1" for="motionDetectToggleDesktop" data-key="smartMotionDetectLabel">{{ translations[lang]['smartMotionDetectLabel'] }}</label>
+                                </div>
+                                <div class="form-switch flex-column align-items-center text-center ms-4" style="display: flex;" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+                                    <input class="smart-switch" type="checkbox" id="objectTrackingToggleDesktop">
+                                    <label class="form-check-label mt-1" for="objectTrackingToggleDesktop" data-key="smartObjectTrackingLabel">{{ translations[lang]['smartObjectTrackingLabel'] }}</label>
+                                </div>
+                            </div>
+                            <div class="smart-motion-desc mt-2">
+                                <i class="fas fa-info-circle"></i>
+                                <small data-key="smartFeaturesHint">{{ translations[lang]['smartFeaturesHint'] }}</small>
+                            </div>
+                        </div>
+                        <!-- END Smart Security Panel -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item d-none d-lg-block" id="logsAccordionDesktop">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#logsCollapse" aria-expanded="false" aria-controls="logsCollapse" title="{{ translations[lang]['logsHeading'] }}">
+                        <span class="accordion-title-group" data-key="logsHeading">{{ translations[lang]['logsHeading'] }}</span>
+                    </button>
+                </h2>
+                <div id="logsCollapse" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                    <div class="accordion-body">
+                        <!-- Server Status Panel: جذاب و مهندسی‌شده -->
+                        <div id="serverStatusPanel" class="server-status-panel mb-4">
+                            <div class="status-row">
+                                <div class="status-item" id="status-ram">
+                                    <i class="fas fa-memory"></i>
+                                    <span class="status-label" data-key="ramLabel">{{ translations[lang]['ramLabel'] }}</span>
+                                    <span class="status-value" id="status-ram-value">--</span>
+                                </div>
+                                <div class="status-item" id="status-cpu">
+                                    <i class="fas fa-microchip"></i>
+                                    <span class="status-label" data-key="cpuLabel">{{ translations[lang]['cpuLabel'] }}</span>
+                                    <span class="status-value" id="status-cpu-value">--</span>
+                                </div>
+                                <div class="status-item" id="status-storage">
+                                    <i class="fas fa-hdd"></i>
+                                    <span class="status-label" data-key="storageLabel">{{ translations[lang]['storageLabel'] }}</span>
+                                    <span class="status-value" id="status-storage-value">--</span>
+                                </div>
+                                <div class="status-item" id="status-internet">
+                                    <i class="fas fa-globe"></i>
+                                    <span class="status-label" data-key="internetLabel">{{ translations[lang]['internetLabel'] }}</span>
+                                    <span class="status-value" id="status-internet-value">--</span>
+                                </div>
+                                <div class="status-item" id="status-camera">
+                                    <i class="fas fa-video"></i>
+                                    <span class="status-label" data-key="cameraLabel">{{ translations[lang]['cameraLabel'] }}</span>
+                                    <span class="status-value" id="status-camera-value">--</span>
+                                </div>
+                                <div class="status-item" id="status-pico">
+                                    <i class="fas fa-microchip"></i>
+                                    <span class="status-label" data-key="picoLabel">{{ translations[lang]['picoLabel'] }}</span>
+                                    <span class="status-value" id="status-pico-value">--</span>
+                                </div>
+                                <div class="status-item" id="status-stream">
+                                    <i class="fas fa-video"></i>
+                                    <span class="status-label" data-key="streamLabel">{{ translations[lang]['streamLabel'] }}</span>
+                                    <span class="status-value" id="streamStatus">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        <h4 class="section-title" data-key="recentLogsTitle">{{ translations[lang]['recentLogsTitle'] }}</h4>
+                        <div class="logs-controls">
+                            <button id="refreshLogsBtn" class="btn btn-primary btn-custom" title="{{ translations[lang]['refreshLogsBtn'] }}"><i class="fas fa-sync-alt me-2"></i> {{ translations[lang]['logsUpdated'] }}</button>
+                            <div class="log-limit-control">
+                                <label for="logLimit" data-key="logLimitLabel">{{ translations[lang]['logLimitLabel'] }}:</label>
+                                <select id="logLimit" class="form-select">
+                                    <option value="10" selected data-key="logLimitOption10">{{ translations[lang]['logLimitOption10'] }}</option>
+                                    <option value="50" data-key="logLimitOption50">{{ translations[lang]['logLimitOption50'] }}</option>
+                                    <option value="100" data-key="logLimitOption100">{{ translations[lang]['logLimitOption100'] }}</option>
+                                </select>
+                            </div>
+                            <button id="showAllLogsBtn" class="btn btn-outline-primary btn-custom" title="{{ translations[lang]['showAllLogs'] }}"><i class="fas fa-list me-2"></i> {{ translations[lang]['showAllLogs'] }}</button>
+                        </div>
+                        <div class="logs-container mt-3" id="logsContainer">
+                            {% for log in logs %}
+                                <div class="log-item log-level-{{ log.level | lower }}">
+                                    <span class="log-time">{{ log.timestamp | datetimeformat(lang) }}</span>
+                                    <span class="log-level {{ log.level | lower }}">{{ log.level | translate_log_level(lang) }}</span>
+                                    <span class="log-message">{{ log.message }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="aboutPage" class="spa-page" style="display:none;">
+        <div class="about-card">
+            <h2 data-key="aboutHeading">{{ translations[lang]['aboutHeading'] }}</h2>
+            <button class="btn btn-outline-primary btn-back mt-2 mb-3" id="aboutBackBtn"><i class="fas fa-arrow-right"></i> {{ translations[lang]['spaBackText'] }}</button>
+            <p data-key="aboutText">{{ translations[lang]['aboutText'] }}</p>
+            <ul class="about-features">
+                <li data-key="featureEncrypt"><i class="fas fa-shield-alt"></i> {{ translations[lang]['featureEncrypt'] }}</li>
+                <li data-key="benefitFast"><i class="fas fa-bolt"></i> {{ translations[lang]['benefitFast'] }}</li>
+                <li data-key="benefitBrowser"><i class="fas fa-mobile-alt"></i> {{ translations[lang]['benefitBrowser'] }}</li>
+                <li data-key="footerSupport"><i class="fas fa-users"></i> {{ translations[lang]['footerSupport'] }}</li>
+            </ul>
+        </div>
+    </div>
+    <div id="storePage" class="spa-page" style="display:none;">
+        <div class="store-card">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="mb-0" data-key="storeHeading">{{ translations[lang]['storeHeading'] }}</h2>
+                <button class="btn btn-outline-primary btn-back" id="storeBackBtn"><i class="fas fa-arrow-right"></i> {{ translations[lang]['spaBackText'] }}</button>
+            </div>
+            <div class="store-grid" id="storeGrid">
+                <!-- محصولات به صورت داینامیک بارگذاری می‌شوند -->
+            </div>
+        </div>
+    </div>
+    <div id="contactPage" class="spa-page" style="display:none;">
+        <div class="contact-card">
+            <h2 data-key="contactHeading">{{ translations[lang]['contactHeading'] }}</h2>
+            <form id="contactForm">
+                <input type="text" placeholder="{{ translations[lang]['yourName'] }}" required data-key-placeholder="yourName">
+                <input type="email" placeholder="{{ translations[lang]['yourEmail'] }}" required data-key-placeholder="yourEmail">
+                <textarea placeholder="{{ translations[lang]['yourMessage'] }}" required data-key-placeholder="yourMessage"></textarea>
+                <button type="submit" data-key-title="sendMessage">{{ translations[lang]['sendMessage'] }}</button>
+            </form>
+            <div class="contact-info">
+                <p><i class="fas fa-envelope"></i> info@smartcamera.com</p>
+                <p><i class="fas fa-phone"></i> +98 21 1234 5678</p>
+            </div>
+        </div>
+    </div>
+    <div id="galleryPage" class="spa-page" style="display:none;">
+        <div class="gallery-card">
+            <h2 data-key="galleryPageHeading">{{ translations[lang]['galleryPageHeading'] }}</h2>
+            <div class="gallery-grid" id="spaGalleryGrid">
+                <!-- تصاویر گالری به صورت داینامیک بارگذاری می‌شوند -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer-modern desktop-footer">
+      <div class="footer-flex">
+        <!-- درباره ما -->
+        <div class="footer-col about">
+          <h3 data-key="footerAbout"><i class="fas fa-info-circle"></i> {{ translations[lang]['footerAbout'] }}</h3>
+          <p data-key="footerAboutText">{{ translations[lang]['footerAboutText'] }}</p>
+          <ul>
+            <li data-key="footer24h"><i class="fas fa-shield-alt"></i> {{ translations[lang]['footer24h'] }}</li>
+            <li data-key="footerAuto"><i class="fas fa-sync-alt"></i> {{ translations[lang]['footerAuto'] }}</li>
+            <li data-key="footerSupport"><i class="fas fa-users"></i> {{ translations[lang]['footerSupport'] }}</li>
+          </ul>
+        </div>
+        <!-- لینک‌های مفید -->
+        <div class="footer-col links">
+          <h3 data-key="footerLinks"><i class="fas fa-link"></i> {{ translations[lang]['footerLinks'] }}</h3>
+          <ul>
+            <li><a href="#" onclick="showHomePage()"><i class="fas fa-home"></i> <span data-key="home">{{ translations[lang]['home'] }}</span></a></li>
+            <li><a href="#" onclick="showStorePage()"><i class="fas fa-store"></i> <span data-key="store">{{ translations[lang]['store'] }}</span></a></li>
+          </ul>
+        </div>
+        <!-- ارتباط با ما -->
+        <div class="footer-col contact">
+          <h3 data-key="footerContact"><i class="fas fa-address-book"></i> {{ translations[lang]['footerContact'] }}</h3>
+          <div class="footer-socials">
+            <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="mailto:info@smartcamera.com" title="Email"><i class="fas fa-envelope"></i></a>
+          </div>
+          <div class="footer-contact-info">
+            <div><i class="fas fa-phone"></i> <span data-key="footerPhone">+98 21 1234 5678</span></div>
+            <div><i class="fas fa-map-marker-alt"></i> <span data-key="footerContact">{{ translations[lang]['footerContact'] }}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span id="footerTypewriter" style="display:inline-block;font-weight:600;font-size:1.08em;"></span>
+        <p>
+          <i class="fas fa-copyright"></i>
+          <span data-key="footerCopyright">{{ translations[lang]['footerCopyright'] if 'footerCopyright' in translations[lang] else ("2025 سیستم هوشمند دوربین امنیتی. تمامی حقوق محفوظ است." if lang == "fa" else "2025 Smart Security Camera System. All rights reserved.") }}</span>
+        </p>
+      </div>
+    </footer>
+    <nav class="footer-nav-mobile">
+      <a href="#" id="footerThemeBtn" class="footer-nav-item" title="{{ translations[lang]['themeLight'] }}"><i class="fas fa-moon"></i><span data-key="themeLight">{{ translations[lang]['themeLight'] }}</span></a>
+      <a href="#" id="footerLangBtn" class="footer-nav-item" title="{{ translations[lang]['langLabel'] }}"><i class="fas fa-globe"></i><span data-key="langLabel">{{ translations[lang]['langLabel'] }}</span></a>
+      <a href="#" id="footerHomeBtn" class="footer-nav-item home-btn" title="{{ translations[lang]['home'] }}"><i class="fas fa-home"></i><span data-key="footerHomeMobile">{{ translations[lang]['home'] }}</span></a>
+      <a href="#" id="footerStatusBtn" class="footer-nav-item" title="{{ translations[lang]['footerStatusMobile'] }}"><i class="fas fa-server"></i><span data-key="footerStatusMobile">{{ translations[lang]['footerStatusMobile'] }}</span></a>
+      <a href="#" id="footerProfileBtn" class="footer-nav-item" title="{{ translations[lang]['footerProfileMobile'] }}"><i class="fas fa-user-circle"></i><span data-key="footerProfileMobile">{{ translations[lang]['footerProfileMobile'] }}</span></a>
+    </nav>
+
+    <!-- Modern Video Player Modal -->
+    <div class="modal fade" id="videoPlayerModal" tabindex="-1" aria-labelledby="videoPlayerModalLabel">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content video-player-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoPlayerModalLabel">
+                        <i class="fas fa-video me-2"></i>
+                        <span id="videoPlayerTitle"></span>
+                    </h5>
+                    <button type="button" class="modal-close-btn" id="videoPlayerCloseBtn" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="video-player-container">
+                        <div class="video-player-wrapper">
+                            <video id="mainVideoPlayer" class="main-video-player" preload="metadata" playsinline>
+                                <source id="mainVideoSource" src="" type="video/mp4">
+                                <p class="video-fallback">مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.</p>
+                            </video>
+                            
+                            <!-- Video Loading Overlay -->
+                            <div id="videoLoadingOverlay" class="video-loading-overlay">
+                                <div class="loading-spinner">
+                                    <div class="spinner-ring"></div>
+                                    <div class="spinner-text">در حال بارگذاری...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Video Error Overlay -->
+                            <div id="videoErrorOverlay" class="video-error-overlay" style="display: none;">
+                                <div class="error-content">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <h4>خطا در بارگذاری ویدیو</h4>
+                                    <p>متأسفانه ویدیو بارگذاری نشد. لطفاً دوباره تلاش کنید.</p>
+                                    <button id="retryVideoBtn" class="btn btn-primary">
+                                        <i class="fas fa-redo me-2"></i>تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Custom Video Controls -->
+                            <div class="custom-video-controls">
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill"></div>
+                                        <div class="progress-handle"></div>
+                                    </div>
+                                    <div class="time-display">
+                                        <span class="current-time">00:00</span>
+                                        <span class="duration">00:00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="control-buttons">
+                                    <button class="control-btn play-pause-btn" id="playPauseBtn">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="control-btn volume-btn" id="volumeBtn">
+                                        <i class="fas fa-volume-up"></i>
+                                    </button>
+                                    <button class="control-btn fullscreen-btn" id="fullscreenBtn">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="video-info">
+                        <span class="video-filename" id="videoFilename"></span>
+                        <span class="video-timestamp" id="videoTimestamp"></span>
+                    </div>
+                    <div class="video-actions">
+                        <button class="btn btn-outline-primary" id="downloadVideoBtn">
+                            <i class="fas fa-download me-2"></i>دانلود
+                        </button>
+                        <button class="btn btn-outline-danger" id="deleteVideoBtn">
+                            <i class="fas fa-trash me-2"></i>حذف
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal (Keep for images) -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel"></h5>
+                    <button type="button" class="modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" class="modal-img" style="max-width:100%;max-height:70vh;" loading="lazy">
+                </div>
+                <div class="modal-footer">
+                    <a href="" target="_blank" rel="noopener" class="btn btn-success">
+                        <i class="fas fa-download me-2"></i> <span data-key="download">{{ translations[lang]['download'] }}</span>
+                    </a>
+                    <button class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i> <span data-key="delete">{{ translations[lang]['delete'] }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileModalLabel">
+                        <i class="fas fa-user-circle me-2"></i>
+                        <span data-key="profileTitle">{{ translations[lang]['profileTitle'] if 'profileTitle' in translations[lang] else 'پروفایل کاربری' }}</span>
+                    </h5>
+                    <button type="button" class="modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="profile-details">
+                            <h6 class="profile-username" id="profileUsername">{{ translations[lang]['profileUsername'] }}</h6>
+                            <p class="profile-role" id="profileRole">{{ translations[lang]['profileRole'] if 'profileRole' in translations[lang] else 'کاربر' }}</p>
+                            <p class="profile-status">
+                                <i class="fas fa-circle text-success me-2"></i>
+                                <span data-key="profileOnline">{{ translations[lang]['profileOnline'] if 'profileOnline' in translations[lang] else 'آنلاین' }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn btn-outline-primary profile-action-btn" id="profileSettingsBtn">
+                            <i class="fas fa-cog me-2"></i>
+                            <span data-key="profileSettings">{{ translations[lang]['profileSettings'] if 'profileSettings' in translations[lang] else 'تنظیمات' }}</span>
+                        </button>
+                        <button class="btn btn-outline-info profile-action-btn" id="profileHelpBtn">
+                            <i class="fas fa-question-circle me-2"></i>
+                            <span data-key="profileHelp">{{ translations[lang]['profileHelp'] if 'profileHelp' in translations[lang] else 'راهنما' }}</span>
+                        </button>
+                        <button class="btn btn-outline-warning profile-action-btn" id="profileAboutBtn">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span data-key="profileAbout">{{ translations[lang]['profileAbout'] if 'profileAbout' in translations[lang] else 'درباره سیستم' }}</span>
+                        </button>
+                        <button class="btn btn-danger profile-action-btn" id="profileLogoutBtn">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            <span data-key="profileLogout">{{ translations[lang]['profileLogout'] if 'profileLogout' in translations[lang] else 'خروج از حساب' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Profile Page -->
+    <div class="mobile-profile-page" id="mobileProfilePage" style="display: none;">
+        <div class="mobile-profile-header">
+            <button class="mobile-back-btn" onclick="hideMobileProfilePage()">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <h4 data-key="profileTitle">{{ translations[lang]['profileTitle'] if 'profileTitle' in translations[lang] else 'پروفایل کاربری' }}</h4>
+        </div>
+        
+        <div class="mobile-profile-content">
+            <div class="mobile-profile-info">
+                <div class="mobile-profile-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="mobile-profile-details">
+                    <h5 class="mobile-profile-username" id="mobileProfileUsername">{{ translations[lang]['profileUsername'] }}</h5>
+                    <p class="mobile-profile-role" id="mobileProfileRole">{{ translations[lang]['profileRole'] if 'profileRole' in translations[lang] else 'کاربر' }}</p>
+                    <p class="mobile-profile-status">
+                        <i class="fas fa-circle text-success me-2"></i>
+                        <span data-key="profileOnline">{{ translations[lang]['profileOnline'] if 'profileOnline' in translations[lang] else 'آنلاین' }}</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mobile-profile-actions">
+                <button class="mobile-profile-action-btn" id="mobileProfileSettingsBtn">
+                    <i class="fas fa-cog"></i>
+                    <span data-key="profileSettings">{{ translations[lang]['profileSettings'] if 'profileSettings' in translations[lang] else 'تنظیمات' }}</span>
+                </button>
+                <button class="mobile-profile-action-btn" id="mobileProfileHelpBtn">
+                    <i class="fas fa-question-circle"></i>
+                    <span data-key="profileHelp">{{ translations[lang]['profileHelp'] if 'profileHelp' in translations[lang] else 'راهنما' }}</span>
+                </button>
+                <button class="mobile-profile-action-btn" id="mobileProfileAboutBtn">
+                    <i class="fas fa-info-circle"></i>
+                    <span data-key="profileAbout">{{ translations[lang]['profileAbout'] if 'profileAbout' in translations[lang] else 'درباره سیستم' }}</span>
+                </button>
+                <button class="mobile-profile-action-btn mobile-logout-btn" id="mobileProfileLogoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span data-key="profileLogout">{{ translations[lang]['profileLogout'] if 'profileLogout' in translations[lang] else 'خروج از حساب' }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="allLogsModal" tabindex="-1" aria-labelledby="allLogsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="allLogsModalLabel">{{ translations[lang]['showAllLogs'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="logs-container" id="allLogsContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ translations[lang]['close'] }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      /* global JSON */
+      try {
+        window.currentLanguage = "{{ lang }}";
+        // Normalize to a language-keyed object so frontend can switch reliably
+        window.translations = window.translations || {};
+        window.translations[window.currentLanguage] = JSON.parse('{{ translations[lang] | tojson | replace("</", "<\\/") | safe }}');
+        const t = window.translations[window.currentLanguage] || {};
+        if (t.siteTitle) { document.title = t.siteTitle; }
+      } catch (e) { window.translations = window.translations || {}; }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/index/video-player.js"></script>
+    <script src="/static/js/index/script.js" defer></script>
+    <script>
+      // Smart Header and Footer Management
+      let headerTimeout;
+      let footerTimeout;
+      let lastScrollY = 0;
+      let isAtTop = true;
+      let isAtBottom = false;
+
+      function handleHeaderVisibility() {
+        const header = document.getElementById('mainHeader');
+        const footer = document.querySelector('footer');
+        const currentScrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        
+        // Check if at top
+        isAtTop = currentScrollY <= 50;
+        
+        // Check if at bottom
+        isAtBottom = currentScrollY + windowHeight >= documentHeight - 50;
+        
+        // Header behavior: hide on scroll down, show on scroll up or at top
+        if (currentScrollY > lastScrollY && currentScrollY > 100 && !isAtTop) {
+          // Scrolling down - hide header
+          header.classList.add('hidden');
+        } else if (currentScrollY < lastScrollY || isAtTop) {
+          // Scrolling up or at top - show header
+          header.classList.remove('hidden');
+        }
+        
+        // Footer behavior: show only at bottom
+        if (footer) {
+          if (isAtBottom) {
+            footer.style.transform = 'translateY(0)';
+            footer.style.opacity = '1';
+          } else {
+            footer.style.transform = 'translateY(100%)';
+            footer.style.opacity = '0';
+          }
+        }
+        
+        lastScrollY = currentScrollY;
+      }
+
+      // Debounce function for performance
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      // Debounced header visibility handler
+      const debouncedHeaderVisibility = debounce(handleHeaderVisibility, 10);
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize header and footer visibility
+        handleHeaderVisibility();
+        
+        // Event listeners for header and footer
+        window.addEventListener('scroll', debouncedHeaderVisibility);
+        window.addEventListener('resize', debouncedHeaderVisibility);
+      });
+
+      // Global function for mobile profile page
+      function hideMobileProfilePage() {
+        if (window.system && typeof window.system.hideMobileProfilePage === 'function') {
+          window.system.hideMobileProfilePage();
+        }
+      }
+    </script>
+</body>
+</html>

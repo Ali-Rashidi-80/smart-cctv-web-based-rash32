@@ -1,0 +1,41 @@
+fastapi
+uvicorn
+pydantic
+aiosqlite
+python-jose
+python-dotenv
+opencv-python
+numpy
+Pillow
+websockets
+aiofiles
+httpx
+pyotp
+persiantools
+arabic-reshaper
+python-bidi
+psutil
+jinja2
+pytest
+pytest-asyncio
+jdatetime
+bcrypt
+# Enhanced security libraries
+fastapi-csrf-protect
+fastapi-limiter
+fastapi-users
+cryptography
+bleach
+redis
+
+
+
+# Logging and monitoring
+loguru
+colorama
+
+
+# Missing dependencies that are actually used in the codebase
+zeep
+aiohttp
+requests
