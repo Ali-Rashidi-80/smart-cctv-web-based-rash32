@@ -6,10 +6,17 @@
 .env.test
 .env.production
 
-# Node.js
-node_modules/
-npm-debug.log
-yarn-error.log
+
+
+admin_credentials.txt
+
+
+smart_camera_system.db
+
+
+
+
+
 
 # Python
 *.pyc
